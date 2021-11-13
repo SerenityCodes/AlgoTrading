@@ -21,16 +21,16 @@ class AssetGetter:
         return self.data_path
 
     def get_login_information(self):
-        with open(self.config_path) as file:
-            return json.load(file)["login"]
+        with open(self.config_path) as f:
+            return json.load(f)["login"]
 
     def get_wiki_prices_url(self):
-        with open(self.config_path) as file:
-            return json.load(file)["wiki_url"]
+        with open(self.config_path) as f:
+            return json.load(f)["wiki_url"]
 
     def get_wiki_stocks_url(self):
-        with open(self.config_path) as file:
-            return json.load(file)["wiki_stocks_url"]
+        with open(self.config_path) as f:
+            return json.load(f)["wiki_stocks_url"]
 
     def download_wiki_prices_file(self):
         if not os.path.exists(os.path.join(self.data_path, "wiki_prices.csv")):
