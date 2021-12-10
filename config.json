@@ -1,0 +1,6 @@
+{
+  "wiki_url": "",
+  "wiki_stocks_url": "",
+  "geckodriver_url": "https://github.com/mozilla/geckodriver/releases/download/v0.30.0/geckodriver-v0.30.0-linux64.tar.gz",
+  "algoseek_data": "https://algoseek-public.s3.amazonaws.com/nasdaq100-1min.zip"
+}

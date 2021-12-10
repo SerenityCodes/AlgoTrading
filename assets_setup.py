@@ -1,18 +1,21 @@
+import json
 import os
-import numpy as np
+import tarfile
+from urllib.request import urlopen
+from zipfile import ZipFile
+from tqdm import tqdm
+
 import pandas as pd
 import pandas_datareader.data as web
 import requests
-from urllib.request import urlopen
-from zipfile import ZipFile
-import json
 
 
 class AssetGetter:
-    def __init__(self, data_path, geckodriver_path, config_path):
+    def __init__(self, data_path, config_path):
         self.data_path = data_path
-        self.geckodriver_path = geckodriver_path
         self.config_path = config_path
+        self.create_dataset_folder()
+        self.download_geckodriver()
 
     def set_base_path(self, data_path):
         self.data_path = data_path
@@ -20,17 +23,40 @@ class AssetGetter:
     def get_base_path(self):
         return self.data_path
 
-    def get_login_information(self):
+    def get_config_option(self, option):
         with open(self.config_path) as f:
-            return json.load(f)["login"]
+            return json.load(f)[option]
 
     def get_wiki_prices_url(self):
-        with open(self.config_path) as f:
-            return json.load(f)["wiki_url"]
+        return self.get_config_option("wiki_url")
 
     def get_wiki_stocks_url(self):
-        with open(self.config_path) as f:
-            return json.load(f)["wiki_stocks_url"]
+        return self.get_config_option("wiki_stocks_url")
+
+    def get_geckodriver_url(self):
+        return self.get_config_option("geckodriver_url")
+
+    def create_dataset_folder(self):
+        if not os.path.exists(self.data_path):
+            os.mkdir(self.data_path)
+
+    def download_geckodriver(self):
+        driver_path = self.data_path + "/driver"
+        final_path = driver_path + "/geckodriver"
+        if not os.path.exists(final_path):
+            if not os.path.exists(driver_path):
+                os.mkdir(driver_path)
+
+            tar_response = urlopen(self.get_geckodriver_url())
+            tar_name = "geckodriver_tarfile.tar.gz"
+
+            tar_file = tarfile.open(fileobj=tar_response, mode="r|gz")
+            tar_file.extractall(self.data_path + "/driver")
+            tar_file.close()
+            if os.path.exists(final_path):
+                print("Download successful!")
+            else:
+                print("Download and unpack failed.")
 
     def download_wiki_prices_file(self):
         if not os.path.exists(os.path.join(self.data_path, "wiki_prices.csv")):
@@ -107,3 +133,19 @@ class AssetGetter:
             with pd.HDFStore(assets_file) as store:
                 store.put("quandl/wiki/prices", prices)
                 store.put("quandl/wiki/stocks", stocks)
+
+    def download_algoseek_data(self):
+        download_url = self.get_config_option("algoseek_data")
+        download_name = self.data_path + "/" + download_url.split("/")[-1]
+
+        if not os.path.exists(download_name):
+            zip_response = urlopen(download_url)
+            with tqdm.wrapattr(open(download_name, "wb"), "write",
+                               miniters=1,
+                               desc="Downloading Algoseek Data",
+                               total=getattr(zip_response, 'length', None)) as out:
+                for chunk in zip_response:
+                    out.write(chunk)
+            zip_file = ZipFile(download_name)
+            zip_file.extractall()
+            zip_file.close()
